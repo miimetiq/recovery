@@ -16,7 +16,7 @@
     cmd: |
       cd {{ rancher_path }}
       docker-compose stop rancher-server
-      cat {{ rancher_db }} | docker exec -t {{ racher_sql_container_name }} \
+      cat {{ rancher_db }} | docker exec -i {{ racher_sql_container_name }} \
         mysql -u {{ rancher_backup_user }} -p{{ rancher_backup_user_pass }} {{ rancher_db_name }}
       docker-compose start rancher-server
 
