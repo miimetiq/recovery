@@ -11,4 +11,3 @@
   when: (mode == "backup") and ((content == "all") or (content == "rancher"))
 - include_tasks: restore-rancher.yml
   when: (mode == "restore") and ((content == "all") or (content == "rancher"))
-
