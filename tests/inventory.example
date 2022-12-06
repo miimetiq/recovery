@@ -1,0 +1,8 @@
+miimetiq1 ansible_host=10.2.0.102
+miimetiq2 ansible_host=10.2.0.141
+
+[source]
+miimetiq1
+
+[target]
+miimetiq2

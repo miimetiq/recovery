@@ -1,0 +1,64 @@
+---
+- name: "Process: {{ mode }} - Installing python boto3"
+  pip:
+    name: boto3
+    state: present
+  when: storage == "s3"
+
+- name: "Process: {{ mode }} - Creating target directory ({{ local_backup_path }})"
+  file:
+    path: "{{ local_backup_path }}"
+    state: directory
+    mode: 0755
+
+- name: "Process: {{ mode }} - S3 bucket list"
+  amazon.aws.aws_s3:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    aws_region: "{{ aws_region }}"
+    #s3_url: "{{ s3_url }}"
+    bucket: "{{ aws_bucket }}"
+    mode: list
+    prefix: "{{ miimetiq_stack }}"
+  register: listresult
+  when: storage == "s3"
+
+# - debug: msg={{listresult.s3_keys}}
+#   when: storage == "s3"
+
+- name: "Process: {{ mode }} - Downloading backups to S3 bucket"
+  amazon.aws.aws_s3:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    aws_region: "{{ aws_region }}"
+    #s3_url: "{{ s3_url }}"
+    bucket: "{{ aws_bucket }}"
+    mode: get
+    object: "{{ item }}"
+    dest: "{{ local_backup_path }}/{{ item }}"
+  loop: "{{ listresult.s3_keys }}"
+  when: storage == "s3"
+
+- name: "Getting downloaded files list."
+  shell:
+    chdir: "{{ local_backup_path }}"
+    cmd: "ls -1"
+  register: volumes_in_pkg
+
+- name: "Process: {{ mode }} - Importing Docker volumes data."
+  shell:
+    cmd: |
+      VID=$(docker volume ls | grep {{ item.split("_").0 }}_{{ item.split("_").1 }} | cut -f 6 -d " ")
+      docker run \
+        --rm \
+        -v ${VID}:/volume-backup-target \
+        -v {{ local_backup_path }}:/volume-backup-source \
+        busybox \
+        sh -c 'cd /volume-backup-target && tar xf /volume-backup-source/{{ item }} .'
+  loop: "{{ volumes_in_pkg.stdout.split('\n') }}"
+
+- name: "Process: {{ mode }} - Remove local copies of the backup."
+  file:
+    path: "{{ local_backup_path }}/{{ item }}"
+    state: absent
+  loop: "{{ volumes_in_pkg.stdout.split('\n') }}"

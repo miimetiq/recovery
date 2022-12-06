@@ -1,0 +1,17 @@
+galaxy_info:
+  author: Oriol Rius <oriol.rius@nexiona.com>
+  description: Ansible role for simplifying backup and restore process of MIIMETIQ.
+  company: Nexiona Connectocrats,S.L.
+
+  license: MIT
+  min_ansible_version: 2.1
+  platforms:
+  - name: Ubuntu
+    versions:
+    - 20.04
+
+  galaxy_tags:
+  - Nexiona
+  - miimetiq
+
+dependencies: []

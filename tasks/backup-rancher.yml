@@ -1,0 +1,40 @@
+---
+- name: "Cleaning old files."
+  file:
+    path: "{{ rancher_db }}"
+    state: absent
+
+- name: "Dump Rancher SQL data to {{ rancher_db }}"
+  shell:
+    cmd: |
+      docker exec -t {{ racher_sql_container_name }} \
+        mysqldump -u {{ rancher_backup_user }} -p{{ rancher_backup_user_pass }} \
+        --single-transaction --lock-tables rancher > {{ rancher_db }}
+
+- name: "Process: {{ mode }} - Uploading SQL dump to S3 bucket."
+  amazon.aws.aws_s3:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    aws_region: "{{ aws_region }}"
+    #s3_url: "{{ s3_url }}"
+    bucket: "{{ aws_bucket }}"
+    mode: put
+    overwrite: true
+    encrypt: no
+    src: "{{ rancher_db }}"
+    object: "{{ rancher_db | basename }}"
+  when: storage == "s3"
+
+- name: "Sync SQL dump from {{groups['source'][0]}} to {{groups['target'][0]}}"
+  ansible.posix.synchronize:
+    src: "{{ rancher_db }}"
+    dest: "{{ rancher_db }}"
+    mode: pull
+  delegate_to: "{{ groups['target'][0] }}"
+  when: storage == "sync"
+
+- name: "Process: {{ mode }} - Remove SQL dump local."
+  file:
+    path: "{{ rancher_db }}"
+    state: absent
+  when: storage != "local"

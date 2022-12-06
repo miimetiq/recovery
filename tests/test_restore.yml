@@ -1,0 +1,17 @@
+---
+- hosts: target
+  remote_user: root
+  gather_facts: true
+  become: true
+  # vars:
+  #   miimetiq_stack: "miimetiq-composer"
+  #   aws_access_key: "XX"
+  #   aws_secret_key: "YY"
+  #   aws_region: "eu-central-1"
+  #   aws_bucket: "miimetiq"
+  #   local_backup_path: /tmp/docker-volume-backup
+  #   mode: "restore"
+  #   storage: "local" # s3, local and sync
+  #   content: "volumes"
+  roles:
+    - role: ../backup

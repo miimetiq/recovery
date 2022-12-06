@@ -1,0 +1,57 @@
+---
+- name: "Cleaning old files."
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop: 
+    - "{{ images_filepath }}"
+    - "{{ images_filelist }}"
+
+- name: "Saving images to package {{ images_filepath }}"
+  shell:
+    cmd: |
+      # migrate without rancher
+      #IDS=$(docker images | sed '1d' | awk '{if ($1 !~ /^(rancher)/) print $3}')
+      IDS=$(docker images | sed '1d' | awk '{print $3}')
+      # migrate with rancher
+      # IDS=$(docker images | sed '1d' | awk '{print $3}')
+      docker save $IDS -o {{ images_filepath }}
+      #docker images | grep -v rancher | sed '1d' | awk '{print $1 " " $2 " " $3}' > {{ images_filelist }}
+      docker images | sed '1d' | awk '{print $1 " " $2 " " $3}' > {{ images_filelist }}
+
+- name: "Process: {{ mode }} - Uploading backups to S3 bucket."
+  amazon.aws.aws_s3:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    aws_region: "{{ aws_region }}"
+    #s3_url: "{{ s3_url }}"
+    bucket: "{{ aws_bucket }}"
+    mode: put
+    overwrite: true
+    encrypt: no
+    src: "{{ item }}"
+    object: "{{ item | basename }}"
+  loop: 
+    - "{{ images_filepath }}"
+    - "{{ images_filelist }}"
+  when: storage == "s3"
+
+- name: "Sync images from {{groups['source'][0]}} to {{groups['target'][0]}}"
+  ansible.posix.synchronize:
+    src: "{{ item }}"
+    dest: "{{ item }}"
+    mode: pull
+  loop: 
+    - "{{ images_filepath }}"
+    - "{{ images_filelist }}"
+  delegate_to: "{{ groups['target'][0] }}"
+  when: storage == "sync"
+
+- name: "Process: {{ mode }} - Remove local copies of the backup."
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop: 
+    - "{{ images_filepath }}"
+    - "{{ images_filelist }}"
+  when: storage != "local"

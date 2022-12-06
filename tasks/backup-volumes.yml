@@ -1,0 +1,52 @@
+---
+- name: "Process: {{ mode }} - Gettig the list MIIMETIQ Docker data volumes."
+  shell:
+    cmd: docker volume ls | grep {{ miimetiq_stack }} | cut -d " " -f 6
+  register: volumes
+
+- name: "Process: {{ mode }} - Creating target directory ({{ local_backup_path }})"
+  file:
+    path: "{{ local_backup_path }}"
+    state: directory
+    mode: 0755
+
+- name: "Process: {{ mode }} - Exporting volume data."
+  shell:
+    cmd: |
+      docker run \
+        --rm \
+        -v {{ item }}:/volume-backup-source \
+        -v {{ local_backup_path }}:/volume-backup-target \
+        busybox \
+        sh -c 'cd /volume-backup-source && tar cf /volume-backup-target/{{ item }}.tar .'
+  loop: "{{ volumes.stdout.split('\n') }}"
+
+- name: "Process: {{ mode }} - Uploading backups to S3 bucket."
+  amazon.aws.aws_s3:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    aws_region: "{{ aws_region }}"
+    #s3_url: "{{ s3_url }}"
+    bucket: "{{ aws_bucket }}"
+    mode: put
+    overwrite: true
+    encrypt: no
+    src: "{{ local_backup_path }}/{{ item }}.tar"
+    object: "{{ item }}.tar"
+  loop: "{{ volumes.stdout.split('\n') }}"
+  when: storage == "s3"
+
+- name: "Sync backup from {{groups['source'][0]}} to {{groups['target'][0]}}"
+  ansible.posix.synchronize:
+    src: "{{ local_backup_path }}/*tar"
+    dest: "{{ local_backup_path }}/"
+    mode: pull
+  delegate_to: "{{ groups['target'][0] }}"
+  when: storage == "sync"
+
+- name: "Process: {{ mode }} - Remove local copies of the backup."
+  file:
+    path: "{{ local_backup_path }}/{{ item }}"
+    state: absent
+  loop: "{{ volumes.stdout.split('\n') }}"
+  when: storage != "local"

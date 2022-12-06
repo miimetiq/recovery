@@ -1,0 +1,14 @@
+---
+- include_tasks: backup-volumes.yml
+  when: (mode == "backup") and ((content == "all") or (content == "volumes"))
+- include_tasks: restore-volumes.yml
+  when: (mode == "restore") and ((content == "all") or (content == "volumes"))
+- include_tasks: backup-images.yml
+  when: (mode == "backup") and ((content == "all") or (content == "images"))
+- include_tasks: restore-images.yml
+  when: (mode == "restore") and ((content == "all") or (content == "images"))
+- include_tasks: backup-rancher.yml
+  when: (mode == "backup") and ((content == "all") or (content == "rancher"))
+- include_tasks: restore-rancher.yml
+  when: (mode == "restore") and ((content == "all") or (content == "rancher"))
+

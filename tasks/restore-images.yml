@@ -1,0 +1,38 @@
+---
+- name: "Process: {{ mode }} - Downloading backups from S3 bucket"
+  amazon.aws.aws_s3:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    aws_region: "{{ aws_region }}"
+    #s3_url: "{{ s3_url }}"
+    bucket: "{{ aws_bucket }}"
+    mode: get
+    object: "{{ item | basename}}"
+    dest: "{{ item }}"
+  loop: 
+    - "{{ images_filepath }}"
+    - "{{ images_filelist }}"
+  when: storage == "s3"
+
+- name: "Loading Docker images."
+  shell:
+    cmd: |
+      docker load -i {{ images_filepath }}
+
+- name: "Tagging images."
+  shell:
+    cmd: |
+      while read REPOSITORY TAG IMAGE_ID
+      do
+              echo "== Tagging: $REPOSITORY $TAG $IMAGE_ID =="
+              docker tag "$IMAGE_ID" "$REPOSITORY:$TAG"
+      done < {{ images_filelist }}
+
+- name: "Process: {{ mode }} - Remove local copies of the backup."
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop: 
+    - "{{ images_filepath }}"
+    - "{{ images_filelist }}"
+  when: storage != "local"
