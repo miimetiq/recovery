@@ -21,9 +21,8 @@
         --complete-insert\
         --tz-utc\
         --hex-blob\
-        --result-file={{ rancher_db }} \
-        {{ rancher_db_name }}
-      #sed -i '1d' {{ rancher_db }}
+        {{ rancher_db_name }} > {{ rancher_db }}
+      sed -i '1d' {{ rancher_db }}
 
 - name: "Process: {{ mode }} - Uploading SQL dump to S3 bucket."
   amazon.aws.aws_s3:
