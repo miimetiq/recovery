@@ -19,7 +19,6 @@
         --add-drop-database\
         --add-drop-table\
         --complete-insert\
-        --delayed-insert\
         --tz-utc\
         {{ rancher_db_name }} > {{ rancher_db }}
       sed '1d' {{ rancher_db }}
