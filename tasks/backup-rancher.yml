@@ -21,7 +21,7 @@
         --complete-insert\
         --tz-utc\
         {{ rancher_db_name }} > {{ rancher_db }}
-      sed '1d' {{ rancher_db }}
+      sed -i '1d' {{ rancher_db }}
 
 - name: "Process: {{ mode }} - Uploading SQL dump to S3 bucket."
   amazon.aws.aws_s3:
