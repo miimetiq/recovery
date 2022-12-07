@@ -21,7 +21,7 @@
         --complete-insert\
         --tz-utc\
         --hex-blob\
-        --result-file={{ rancher_db }}
+        --result-file={{ rancher_db }} \
         {{ rancher_db_name }}
       #sed -i '1d' {{ rancher_db }}
 
