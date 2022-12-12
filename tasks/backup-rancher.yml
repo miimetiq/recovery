@@ -14,21 +14,10 @@
     cmd: |
       docker exec -t {{ racher_sql_container_name }} \
         mysqldump -u {{ rancher_backup_user }} -p'{{ rancher_backup_user_pass }}' \
-        --single-transaction\
+        --single-transaction \
+        --skip-comments \
         {{ rancher_db_name }} > {{ rancher_db }}
       sed -i '1d' {{ rancher_db }}
-        #  --hex-blob\
-        # --compact \
-        # --flush-logs \
-        # --default-character-set=utf8 \        
-        # --routines\
-        # --triggers\
-        # --events\
-        # --add-drop-database\
-        # --add-drop-table\
-        # --complete-insert\
-        # --tz-utc\
-
 
 - name: "Process: {{ mode }} - Uploading SQL dump to S3 bucket."
   amazon.aws.aws_s3:
