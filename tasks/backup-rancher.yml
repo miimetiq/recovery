@@ -14,6 +14,7 @@
     cmd: |
       docker exec -t {{ racher_sql_container_name }} \
         mysqldump -u {{ rancher_backup_user }} -p'{{ rancher_backup_user_pass }}' \
+        -F \
         --single-transaction \
         --skip-comments \
         {{ rancher_db_name }} > {{ rancher_db }}
