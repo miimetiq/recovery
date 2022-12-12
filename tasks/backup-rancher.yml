@@ -4,6 +4,11 @@
     path: "{{ rancher_db }}"
     state: absent
 
+- name: "Is Rancher SQL container running? [{{ racher_sql_container_name }}]"
+  shell:
+    cmd: |
+      docker ps | grep '{{ racher_sql_container_name }}'
+
 - name: "Dump Rancher SQL data to {{ rancher_db }}"
   shell:
     cmd: |
